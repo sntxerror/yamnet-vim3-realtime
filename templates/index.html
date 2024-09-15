@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time YAMNet Inference</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        #predictions { margin-top: 20px; }
+        .prediction { margin-bottom: 10px; }
+        .bar { background-color: #4CAF50; height: 20px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Real-time YAMNet Inference</h1>
+    <div id="predictions"></div>
+
+    <script>
+        var socket = io();
+        socket.on('update_predictions', function(data) {
+            var predictionsDiv = document.getElementById('predictions');
+            predictionsDiv.innerHTML = '';
+            data.predictions.forEach(function(pred) {
+                var predDiv = document.createElement('div');
+                predDiv.className = 'prediction';
+                predDiv.innerHTML = pred[0] + ': ' + (pred[1] * 100).toFixed(2) + '%';
+                var bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.width = (pred[1] * 100) + '%';
+                predDiv.appendChild(bar);
+                predictionsDiv.appendChild(predDiv);
+            });
+        });
+    </script>
+</body>
+</html>
