@@ -5,23 +5,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-time YAMNet Inference</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-        #predictions { margin-top: 20px; }
+        .chart-container { width: 80%; margin: 20px auto; }
+        #predictions, #accumulated-data { margin-top: 20px; }
         .prediction { margin-bottom: 10px; }
         .bar { background-color: #4CAF50; height: 20px; margin-top: 5px; }
     </style>
 </head>
 <body>
     <h1>Real-time YAMNet Inference</h1>
+    <div class="chart-container">
+        <canvas id="predictionChart"></canvas>
+    </div>
     <div id="predictions"></div>
+    <h2>Accumulated Data</h2>
+    <div class="chart-container">
+        <canvas id="accumulatedChart"></canvas>
+    </div>
+    <div id="accumulated-data"></div>
 
     <script>
         var socket = io();
+        var predictionChart, accumulatedChart;
+
+        function initCharts() {
+            var ctx = document.getElementById('predictionChart').getContext('2d');
+            predictionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Probability',
+                        data: [],
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1
+                        }
+                    }
+                }
+            });
+
+            ctx = document.getElementById('accumulatedChart').getContext('2d');
+            accumulatedChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Average Score',
+                        data: [],
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+            initCharts();
+            setInterval(function() {
+                socket.emit('request_accumulated_data');
+            }, 5000);  // Request accumulated data every 5 seconds
+        });
+
         socket.on('update_predictions', function(data) {
+            updatePredictionChart(data.predictions);
+            updatePredictionList(data.predictions);
+        });
+
+        socket.on('accumulated_data', function(data) {
+            updateAccumulatedChart(data.data);
+            updateAccumulatedList(data.data);
+        });
+
+        function updatePredictionChart(predictions) {
+            predictionChart.data.labels = predictions.map(p => p[0]);
+            predictionChart.data.datasets[0].data = predictions.map(p => p[1]);
+            predictionChart.update();
+        }
+
+        function updatePredictionList(predictions) {
             var predictionsDiv = document.getElementById('predictions');
-            predictionsDiv.innerHTML = '';
-            data.predictions.forEach(function(pred) {
+            predictionsDiv.innerHTML = '<h3>Current Predictions</h3>';
+            predictions.forEach(function(pred) {
                 var predDiv = document.createElement('div');
                 predDiv.className = 'prediction';
                 predDiv.innerHTML = pred[0] + ': ' + (pred[1] * 100).toFixed(2) + '%';
@@ -31,7 +111,28 @@
                 predDiv.appendChild(bar);
                 predictionsDiv.appendChild(predDiv);
             });
-        });
+        }
+
+        function updateAccumulatedChart(data) {
+            accumulatedChart.data.labels = data.map(d => d[0]);
+            accumulatedChart.data.datasets[0].data = data.map(d => d[1]);
+            accumulatedChart.update();
+        }
+
+        function updateAccumulatedList(data) {
+            var accumulatedDiv = document.getElementById('accumulated-data');
+            accumulatedDiv.innerHTML = '<h3>Top 10 Accumulated Classes</h3>';
+            data.forEach(function(item) {
+                var itemDiv = document.createElement('div');
+                itemDiv.className = 'prediction';
+                itemDiv.innerHTML = item[0] + ': ' + (item[1] * 100).toFixed(2) + '%';
+                var bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.width = (item[1] * 100) + '%';
+                itemDiv.appendChild(bar);
+                accumulatedDiv.appendChild(itemDiv);
+            });
+        }
     </script>
 </body>
 </html>

@@ -14,16 +14,7 @@ source yamnet_env/bin/activate
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Clone and install KSNN
-git clone https://github.com/khadas/ksnn
-cd ksnn
-sudo python3 setup.py install
-cd ..
-
-# Download YAMNet model
-wget https://storage.googleapis.com/tensorflow/keras-applications/yamnet/yamnet.h5
-
 # Download YAMNet class map
 wget https://raw.githubusercontent.com/tensorflow/models/master/research/audioset/yamnet/yamnet_class_map.csv
 
-echo "Setup complete. Please convert the YAMNet model using KSNN conversion tool."
+echo "Setup complete. You can now run the YAMNet real-time inference script."

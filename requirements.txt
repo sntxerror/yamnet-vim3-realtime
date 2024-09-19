@@ -1,8 +1,7 @@
 numpy==1.19.5
 tensorflow==2.4.1
 tensorflow-hub
-librosa
-matplotlib
-pyaudio
+scipy
+sounddevice
 flask
 flask-socketio
