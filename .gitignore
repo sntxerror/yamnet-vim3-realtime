@@ -1,5 +1,5 @@
 # Python virtual environment
-yamnet_env/
+yamnet_env/*
 
 # Python cache files
 __pycache__/
