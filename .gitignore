@@ -1,0 +1,42 @@
+# Python virtual environment
+yamnet_env/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE specific files (uncomment if you use these IDEs)
+# .vscode/
+# .idea/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# YAMNet specific
+yamnet.h5
+*.wav
+
+# Logs
+*.log
+
+# Database
+*.sqlite
+
+# Environment variables
+.env
