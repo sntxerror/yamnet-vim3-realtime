@@ -15,6 +15,6 @@ source yamnet_env/bin/activate
 pip install -r requirements.txt
 
 # Download YAMNet class map
-wget https://raw.githubusercontent.com/tensorflow/models/master/research/audioset/yamnet/yamnet_class_map.csv
+rm -f yamnet_class_map.csv && wget https://raw.githubusercontent.com/tensorflow/models/master/research/audioset/yamnet/yamnet_class_map.csv
 
 echo "Setup complete. You can now run the YAMNet real-time inference script."
