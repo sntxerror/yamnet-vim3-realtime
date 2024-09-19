@@ -29,6 +29,7 @@ Thumbs.db
 .ipynb_checkpoints
 
 # YAMNet specific
+yamnet_class_map.csv
 yamnet.h5
 *.wav
 
