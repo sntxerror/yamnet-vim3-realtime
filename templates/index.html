@@ -3,136 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-time YAMNet Inference</title>
+    <title>YAMNet Real-time Sound Classification</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-        .chart-container { width: 80%; margin: 20px auto; }
-        #predictions, #accumulated-data { margin-top: 20px; }
-        .prediction { margin-bottom: 10px; }
-        .bar { background-color: #4CAF50; height: 20px; margin-top: 5px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 { text-align: center; }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .chart-container {
+            width: 48%;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .chart-container { width: 100%; }
+        }
+        #spectrogramImage {
+            width: 100%;
+            height: auto;
+            display: block;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>Real-time YAMNet Inference</h1>
-    <div class="chart-container">
-        <canvas id="predictionChart"></canvas>
+    <h1>YAMNet Real-time Sound Classification</h1>
+    <div class="container">
+        <div class="chart-container">
+            <h2>Current Predictions</h2>
+            <canvas id="currentChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>Accumulated Data</h2>
+            <canvas id="accumulatedChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>Current Spectrogram</h2>
+            <img id="spectrogramImage" src="" alt="Spectrogram">
+        </div>
     </div>
-    <div id="predictions"></div>
-    <h2>Accumulated Data</h2>
-    <div class="chart-container">
-        <canvas id="accumulatedChart"></canvas>
-    </div>
-    <div id="accumulated-data"></div>
 
     <script>
-        var socket = io();
-        var predictionChart, accumulatedChart;
+        const socket = io();
+        let currentChart, accumulatedChart;
 
+        // Initialize the charts
         function initCharts() {
-            var ctx = document.getElementById('predictionChart').getContext('2d');
-            predictionChart = new Chart(ctx, {
+            const ctx1 = document.getElementById('currentChart').getContext('2d');
+            currentChart = new Chart(ctx1, {
                 type: 'bar',
                 data: {
                     labels: [],
                     datasets: [{
-                        label: 'Probability',
+                        label: 'Current Predictions',
                         data: [],
                         backgroundColor: 'rgba(75, 192, 192, 0.6)'
                     }]
                 },
                 options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 1
-                        }
-                    }
+                    scales: { y: { beginAtZero: true, max: 1 } }
                 }
             });
 
-            ctx = document.getElementById('accumulatedChart').getContext('2d');
-            accumulatedChart = new Chart(ctx, {
+            const ctx2 = document.getElementById('accumulatedChart').getContext('2d');
+            accumulatedChart = new Chart(ctx2, {
                 type: 'bar',
                 data: {
                     labels: [],
                     datasets: [{
-                        label: 'Average Score',
+                        label: 'Accumulated Data',
                         data: [],
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                        backgroundColor: 'rgba(153, 102, 255, 0.6)'
                     }]
                 },
                 options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 1
-                        }
-                    }
+                    scales: { y: { beginAtZero: true, max: 1 } }
                 }
             });
         }
 
-        socket.on('connect', function() {
-            console.log('Connected to server');
-            initCharts();
-            setInterval(function() {
-                socket.emit('request_accumulated_data');
-            }, 5000);  // Request accumulated data every 5 seconds
-        });
-
-        socket.on('update_predictions', function(data) {
-            updatePredictionChart(data.predictions);
-            updatePredictionList(data.predictions);
-        });
-
-        socket.on('accumulated_data', function(data) {
-            updateAccumulatedChart(data.data);
-            updateAccumulatedList(data.data);
-        });
-
-        function updatePredictionChart(predictions) {
-            predictionChart.data.labels = predictions.map(p => p[0]);
-            predictionChart.data.datasets[0].data = predictions.map(p => p[1]);
-            predictionChart.update();
+        // Update the current predictions chart
+        function updateCurrentChart(predictions) {
+            currentChart.data.labels = predictions.map(p => p[0]);
+            currentChart.data.datasets[0].data = predictions.map(p => p[1]);
+            currentChart.update();
         }
 
-        function updatePredictionList(predictions) {
-            var predictionsDiv = document.getElementById('predictions');
-            predictionsDiv.innerHTML = '<h3>Current Predictions</h3>';
-            predictions.forEach(function(pred) {
-                var predDiv = document.createElement('div');
-                predDiv.className = 'prediction';
-                predDiv.innerHTML = pred[0] + ': ' + (pred[1] * 100).toFixed(2) + '%';
-                var bar = document.createElement('div');
-                bar.className = 'bar';
-                bar.style.width = (pred[1] * 100) + '%';
-                predDiv.appendChild(bar);
-                predictionsDiv.appendChild(predDiv);
-            });
-        }
-
+        // Update the accumulated data chart
         function updateAccumulatedChart(data) {
-            accumulatedChart.data.labels = data.map(d => d[0]);
-            accumulatedChart.data.datasets[0].data = data.map(d => d[1]);
+            accumulatedChart.data.labels = data.map(item => item[0]);
+            accumulatedChart.data.datasets[0].data = data.map(item => item[1]);
             accumulatedChart.update();
         }
 
-        function updateAccumulatedList(data) {
-            var accumulatedDiv = document.getElementById('accumulated-data');
-            accumulatedDiv.innerHTML = '<h3>Top 10 Accumulated Classes</h3>';
-            data.forEach(function(item) {
-                var itemDiv = document.createElement('div');
-                itemDiv.className = 'prediction';
-                itemDiv.innerHTML = item[0] + ': ' + (item[1] * 100).toFixed(2) + '%';
-                var bar = document.createElement('div');
-                bar.className = 'bar';
-                bar.style.width = (item[1] * 100) + '%';
-                itemDiv.appendChild(bar);
-                accumulatedDiv.appendChild(itemDiv);
-            });
-        }
+        // On socket connection, initialize charts
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            initCharts();
+        });
+
+        // Update the current predictions
+        socket.on('update_predictions', (data) => {
+            updateCurrentChart(data.predictions);
+        });
+
+        // Update the accumulated data
+        socket.on('accumulated_data', (data) => {
+            updateAccumulatedChart(data.data);
+        });
+
+        // Update the spectrogram image
+        socket.on('current_spectrogram', (data) => {
+            document.getElementById('spectrogramImage').src = 'data:image/png;base64,' + data.image;
+        });
+
+        // Emit requests periodically for updates
+        const requestInterval = 1000; 
+        setInterval(() => {
+            socket.emit('request_accumulated_data');
+            socket.emit('request_current_spectrogram');
+        }, requestInterval);
+
     </script>
 </body>
 </html>

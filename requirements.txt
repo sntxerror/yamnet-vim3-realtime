@@ -3,5 +3,7 @@ tensorflow
 tensorflow-hub
 scipy
 sounddevice
+soundfile
 flask
 flask-socketio
+matplotlib
