@@ -46,18 +46,18 @@
             <canvas id="currentChart"></canvas>
         </div>
         <div class="chart-container">
-            <h2>Accumulated Data</h2>
-            <canvas id="accumulatedChart"></canvas>
+            <h2>Current Group Predictions</h2>
+            <canvas id="groupChart"></canvas>
         </div>
         <div class="chart-container">
-            <h2>Current Spectrogram</h2>
-            <img id="spectrogramImage" src="" alt="Spectrogram">
+            <h2>Accumulated Data</h2>
+            <canvas id="accumulatedChart"></canvas>
         </div>
     </div>
 
     <script>
         const socket = io();
-        let currentChart, accumulatedChart;
+        let currentChart, accumulatedChart, groupChart;
 
         // Initialize the charts
         function initCharts() {
@@ -73,7 +73,8 @@
                     }]
                 },
                 options: {
-                    scales: { y: { beginAtZero: true, max: 1 } }
+                    indexAxis: 'y', // Rotate the chart to display horizontally
+                    scales: { x: { beginAtZero: true, max: 1 } }  // Use x-axis for value
                 }
             });
 
@@ -89,7 +90,25 @@
                     }]
                 },
                 options: {
-                    scales: { y: { beginAtZero: true, max: 1 } }
+                    indexAxis: 'y', // Rotate the chart to display horizontally
+                    scales: { x: { beginAtZero: true, max: 1 } }  // Use x-axis for value
+                }
+            });
+
+            const ctx3 = document.getElementById('groupChart').getContext('2d');
+            groupChart = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Group Predictions',
+                        data: [],
+                        backgroundColor: 'rgba(255, 159, 64, 0.6)'
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Rotate the chart to display horizontally
+                    scales: { x: { beginAtZero: true, max: 1 } }  // Use x-axis for value
                 }
             });
         }
@@ -101,11 +120,20 @@
             currentChart.update();
         }
 
+        // Update the group predictions chart
+        function updateGroupChart(groups) {
+            groupChart.data.labels = groups.map(g => g[0]);
+            groupChart.data.datasets[0].data = groups.map(g => g[1]);
+            groupChart.update();
+        }
+
         // Update the accumulated data chart
-        function updateAccumulatedChart(data) {
-            accumulatedChart.data.labels = data.map(item => item[0]);
-            accumulatedChart.data.datasets[0].data = data.map(item => item[1]);
+        function updateAccumulatedChart(classes, groups) {
+            accumulatedChart.data.labels = classes.map(item => item[0]);
+            accumulatedChart.data.datasets[0].data = classes.map(item => item[1]);
             accumulatedChart.update();
+
+            updateGroupChart(groups);
         }
 
         // On socket connection, initialize charts
@@ -117,20 +145,16 @@
         // Update the current predictions
         socket.on('update_predictions', (data) => {
             updateCurrentChart(data.predictions);
+            updateGroupChart(data.groups);
         });
 
         // Update the accumulated data
         socket.on('accumulated_data', (data) => {
-            updateAccumulatedChart(data.data);
-        });
-
-        // Update the spectrogram image
-        socket.on('current_spectrogram', (data) => {
-            document.getElementById('spectrogramImage').src = 'data:image/png;base64,' + data.image;
+            updateAccumulatedChart(data.classes, data.groups);
         });
 
         // Emit requests periodically for updates
-        const requestInterval = 1000; 
+        const requestInterval = 2000; 
         setInterval(() => {
             socket.emit('request_accumulated_data');
             socket.emit('request_current_spectrogram');
